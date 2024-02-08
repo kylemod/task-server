@@ -5,9 +5,6 @@ const port = 3000
 const bodyParser = require('body-parser');
 const mongoose = require('mongoose')
 const cors = require('cors')
-const multer = require('multer')
-const { GridFsStorage } = require('multer-gridfs-storage');
-const path = require('path');
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -25,47 +22,6 @@ mongoose.connect(connectionString, options)
   .catch(err => {
     console.log(`Error: ${err}`)
   })
-
-const conn = mongoose.connection;
-
-// Initialize GridFS stream
-let gfs;
-
-conn.once('open', () => {
-  gfs = new mongoose.mongo.GridFSBucket(conn.db, {
-    bucketName: 'uploads'
-  });
-});
-
-// Multer storage engine using GridFS
-const storage = new GridFsStorage({
-  url: connectionString,
-  options: { useNewUrlParser: true, useUnifiedTopology: true },
-  file: (req, file) => {
-    return {
-      filename: file.originalname,
-      bucketName: 'uploads'
-    };
-  }
-});
-
-const upload = multer({ storage });
-
-// File upload endpoint
-app.post('/upload', upload.single('file'), (req, res) => {
-  res.json({ file: req.file });
-});
-
-// Get file endpoint
-app.get('/files', (req, res) => {
-  gfs.find().toArray((err, files) => {
-    if (!files || files.length === 0) {
-      return res.status(404).json({ message: 'No files found' });
-    }
-
-    return res.json({ files });
-  });
-});
   
 // routes
 const authRoutes = require('./routes/auth')
